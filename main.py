@@ -31,9 +31,8 @@ if __name__ == '__main__':
     # update_all_mints()
 
     # 批量转账给小钱包
-    # from_wallet = [0, '0xaddress', 'private_key']
-    # x = xen.XenManager(xen.Network.eth)
-    # x.transfer_money(0.004, from_wallet, 'wallets1.csv')
+    # batch_transfer()
+
     # 批量mint
     # batch_claim_rank()
 
