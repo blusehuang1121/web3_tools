@@ -1,13 +1,14 @@
 from web3.eth import Account
 
+
 def bytes_to_hex(bs):
     return ''.join(['%02X' % b for b in bs])
 
 
-def create_new_wallet(self):
+def create_new_wallet():
     Account.enable_unaudited_hdwallet_features()
     account = Account.create()
-    privateKey = str.lower(self.bytes_to_hex(account.key))
+    privateKey = str.lower(bytes_to_hex(account.key))
     address = account.address
     return address, privateKey
 
@@ -20,6 +21,3 @@ def create_new_wallet_with_mnemonic():
     privateKey = str.lower(bytes_to_hex(account.key))
     address = account.address
     return address, privateKey, mnemonic
-
-
-
