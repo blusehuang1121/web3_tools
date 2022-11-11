@@ -26,6 +26,12 @@ class BatchMintManager(BatchManager):
     def call_read_func(self, func_name, func_args: tuple):
         result = self._contract.get_function_by_name(func_name)(func_args).call()
         print(result)
+        return result
+
+    def call_read_func(self, func_name):
+        result = self._contract.get_function_by_name(func_name)().call()
+        print(result)
+        return result
 
     def batch_call_write_func(self, csv_path, func_name, func_args):
         callback = lambda wallet: {

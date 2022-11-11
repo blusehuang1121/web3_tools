@@ -50,6 +50,8 @@ class XenManager(BatchManager):
         self.write_info_to_file(info_datas, info_csv_path)
 
     def handle_each_wallet(self, each_wallet, info_datas, global_rank, row_no):
+        if len(each_wallet) <= 1:
+            return
         addr = each_wallet[Addr_Index]
         mint_info = self.get_mint_info(addr)
         term = mint_info[1]
