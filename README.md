@@ -54,6 +54,15 @@ manager.batch_call_write_func('xxx.csv', 'publicMint', (1))
 ```
 + 如果需要，可以不使用动态gas，而通过调用limit_gas方法指定gas限制
 
+### 如何进行ERC721 NFT归集
++ 去moralis.io申请一个API KEY，用免费的即可
++ 新建配置文件configs，参考模板configs_template，填写API KEY
+```
+manager = BatchMintManager(network, network_data)
+manager.batch_collect_nft('xxx.csv', NFT合约地址, 归集地址, 是否归集（否为只扫描不归集）)
+```
+
+
 ***
 
 ##### *XEN的示例代码参考main.py*

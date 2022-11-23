@@ -1,14 +1,17 @@
 import csv
+import json
 import math
 import time
 
 import numpy as np
+import requests
+import configparser
+
 from web3 import Web3
 from batch_manager import BatchManager, Network, Addr_Index, No_Index, PriKey_Index
 
 
 class BatchMintManager(BatchManager):
-
     _is_gas_limited = False
     _gas_max_fee = 10
     _gas_limit = 200000
@@ -16,8 +19,11 @@ class BatchMintManager(BatchManager):
 
     def __init__(self, network: Network = Network.eth, network_data: dict = {}) -> None:
         super().__init__(network, network_data)
+        config_parser = configparser.ConfigParser()
+        config_parser.read('configs')
+        self.moralis_key = config_parser.get('ApiKey', 'moralis_key')
 
-    def limit_gas(self, gas_limit, max_fee, priority_fee = 1.5):
+    def limit_gas(self, gas_limit, max_fee, priority_fee=1.5):
         self._is_gas_limited = True
         self._gas_max_fee = max_fee
         self._gas_limit = gas_limit
@@ -41,7 +47,7 @@ class BatchMintManager(BatchManager):
 
     def each_call_func(self, wallet, func_name, func_args: tuple):
         func_name = func_name
-        contract_func = self._contract.get_function_by_name(func_name)(func_args)
+        contract_func = self._contract.get_function_by_name(func_name)(*func_args)
         try:
             args = []
             if type(func_args) == tuple:
@@ -63,3 +69,32 @@ class BatchMintManager(BatchManager):
             else:
                 trans_params['maxFeePerGas'] = self._web3.toWei(self._gas_max_fee, 'gwei')
                 trans_params['maxPriorityFeePerGas'] = self._web3.toWei(self._priority_fee, 'gwei')
+
+    def batch_collect_nft(self, csv_path, nft_addr, to_addr, is_transfer):
+        callback = lambda wallet: {
+            self.each_collect_nft(wallet, nft_addr, to_addr, is_transfer)
+        }
+        self.read_wallets_and_callback(csv_path, callback)
+
+    def each_collect_nft(self, wallet, nft_addr, to_addr, is_transfer):
+        headers = {
+            "accept": "application/json",
+            "X-API-Key": self.moralis_key
+        }
+
+        url = f"https://deep-index.moralis.io/api/v2/{wallet[Addr_Index]}/nft?chain={self._current_network.name}&format=decimal&token_addresses={nft_addr}&normalizeMetadata=false"
+        response = requests.get(url, headers=headers)
+        nft_result = json.loads(response.text)
+
+        if nft_result['total'] <= 0:
+            print(f'No Nft found in Wallet {wallet[No_Index]} {wallet[Addr_Index]}, Ignored.')
+            return
+
+        print(f'Has Nft in Wallet {wallet[No_Index]} {wallet[Addr_Index]}.')
+        if not is_transfer:
+            return
+
+        for each_result in nft_result['result']:
+            token_id = int(each_result['token_id'])
+            print(f'Start to Collect nft from Wallet {wallet[No_Index]} {wallet[Addr_Index]} {token_id}...')
+            self.each_call_func(wallet, 'transferFrom', (Web3.toChecksumAddress(wallet[Addr_Index]), Web3.toChecksumAddress(to_addr), token_id))
