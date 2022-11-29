@@ -2,7 +2,8 @@ import csv
 import math
 import time
 from web3 import Web3
-from batch_manager import BatchManager, Network, Addr_Index, No_Index, PriKey_Index
+from core.batch_manager import BatchManager, Network, Addr_Index, No_Index
+
 
 class XenManager(BatchManager):
 

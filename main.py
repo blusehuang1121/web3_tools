@@ -1,5 +1,4 @@
-import xen_manager as xen
-import wallet_manager as wal
+from core import xen_manager as xen
 
 current_network = xen.Network.eth
 

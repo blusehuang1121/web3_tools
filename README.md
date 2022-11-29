@@ -4,6 +4,36 @@
 &ensp;&ensp;安装web3组件
 `pip install web3`
 
+***
+
+### 2002.11.29更新
+#### 新增ToolHelper工具类，辅助批量NFT Mint和归集，使用方法(代码参考见mint_tool_demo_runner.py)：
+1. 批量ERC721 Mint
+      ```
+      c_abi = 'xxx' #指定合约的abi
+      ToolHelper().erc721('xxx')\ #设置ERC721的合约地址
+        .abi(c_abi)\  #设置abi
+        .network(Network.goerli)\ #设置合约所在网络
+        .wallets('xen_mints/wallets_tomint.csv') \ #设置钱包列表文件（模板见wallets.template）
+        .mint('MethodName', (arg1, arg2, arg3)) #指定合约的Mint方法名称，以及传递Mint参数
+      ```
+2. 如何手动设置gas
+    ```
+      .gas_limit(xx) #设置gas limit
+      .gas_max_fee(xx) #设置最大gas fee（需支持EIP1559）
+      .gas_priority_fee(xx) #设置小费（需支持EIP1559）
+    ```
+3. 如何批量归集（ERC721通用abi已经内置）
+```   
+    ToolHelper().erc721('xxx')\  #设置ERC721的合约地址
+        .network(Network.bsc) \  #设置合约所在网络
+        .wallets('xen_mints/wallets_tomint.csv') \ #设置钱包列表文件（模板见wallets.template）
+        .transfer_to('xxxx')\ #指定归集地址
+        .run() #执行归集
+```
+
+***
+
 ### 如何创建钱包
 ```
 import wallet_manager as wal
