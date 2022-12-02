@@ -77,7 +77,7 @@ class ContractRunner(ToolHelper):
         self._wallet_file_path = get_file_path(wallet_file_path)
         return self
 
-    def run(self):
+    def collect_nft(self):
         network_data = {
             self._network: {
                 'addr': self._addr,
