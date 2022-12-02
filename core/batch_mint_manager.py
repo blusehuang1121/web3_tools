@@ -3,6 +3,7 @@ import json
 import requests
 from web3 import Web3
 from core.batch_manager import BatchManager, Network, Addr_Index, No_Index
+from libs.common import REPLACE_WALLET_ADDR
 from libs.global_config import GlobalConfig
 
 
@@ -22,8 +23,8 @@ class BatchMintManager(BatchManager):
         self._gas_limit = gas_limit
         self._priority_fee = priority_fee
 
-    def call_read_func(self, func_name, func_args: tuple):
-        result = self._contract.get_function_by_name(func_name)(func_args).call()
+    def call_read_func_with_args(self, func_name, func_args: tuple):
+        result = self._contract.get_function_by_name(func_name)(*func_args).call()
         print(result)
         return result
 
@@ -32,16 +33,29 @@ class BatchMintManager(BatchManager):
         print(result)
         return result
 
-    def batch_call_write_func(self, csv_path, func_name, func_args):
+    def batch_call_write_func_with_value(self, csv_path, value, func_name, func_args):
         callback = lambda wallet: {
-            self.each_call_func(wallet, func_name, func_args)
+            self.each_call_func(wallet, value, func_name, func_args)
         }
         self.read_wallets_and_callback(csv_path, callback)
 
-    def each_call_func(self, wallet, func_name, func_args: tuple):
+    def batch_call_write_func(self, csv_path, func_name, func_args):
+        callback = lambda wallet: {
+            self.each_call_func(wallet, 0, func_name, func_args)
+        }
+        self.read_wallets_and_callback(csv_path, callback)
+
+    def each_call_func(self, wallet, value, func_name, func_args: tuple):
         func_name = func_name
         args = []
+
         if type(func_args) == tuple:
+            arg_list = list(func_args)
+            for index, arg in enumerate(arg_list):
+                if arg_list[index] == REPLACE_WALLET_ADDR:
+                    arg_list[index] = wallet[Addr_Index]
+            func_args = tuple(arg_list)
+
             contract_func = self._contract.get_function_by_name(func_name)(*func_args)
             for arg in func_args:
                 args.append(arg)
@@ -49,7 +63,7 @@ class BatchMintManager(BatchManager):
             contract_func = self._contract.get_function_by_name(func_name)(func_args)
             args.append(func_args)
         try:
-            self.call_contract_func(wallet, func_name, args, contract_func)
+            self.call_contract_func(wallet, func_name, args, contract_func, value)
         except Exception as e:
             print(f'Call contract func has an error {wallet[Addr_Index]}, {repr(e)}')
 

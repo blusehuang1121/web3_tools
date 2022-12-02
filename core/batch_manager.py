@@ -16,7 +16,9 @@ class Network(Enum):
     bsc = 2,
     goerli = 3,
     sepolia = 4,
-    bsc_test = 5
+    bsc_test = 5,
+    scroll_test_l1 = 6,
+    scroll_test_l2 = 7
 
 
 No_Index = 0
@@ -52,6 +54,14 @@ class BatchManager:
         Network.bsc_test: {
             'rpc': 'https://bsc-testnet.blastapi.io/7612f97c-4943-4f55-872f-e571b941016e',
             'chain_id': 97
+        },
+        Network.scroll_test_l1: {
+            'rpc': 'https://prealpha.scroll.io/l1',
+            'chain_id': 534351
+        },
+        Network.scroll_test_l2: {
+            'rpc': 'https://prealpha.scroll.io/l2',
+            'chain_id': 534354
         }
     }
 
@@ -78,14 +88,14 @@ class BatchManager:
         self._web3 = Web3(Web3.HTTPProvider(self._rpc))
         self._contract = self._web3.eth.contract(address=self._addr, abi=self._abi)
         self._web3.eth.set_gas_price_strategy(medium_gas_price_strategy)
+        self._max_priority_fee_per_gas = self._web3.eth.max_priority_fee
+        self._max_fee_per_gas = self._web3.eth.max_priority_fee * 2
 
-        if network == Network.bsc:
+        if network in [Network.bsc, Network.bsc_test]:
             self._web3.middleware_onion.inject(geth_poa_middleware, layer=0)
         elif network in [Network.eth, Network.goerli]:
             self._max_fee_per_gas = self._web3.eth.max_priority_fee + int(
                 self._max_fee_multiply * self._web3.eth.get_block('latest')['baseFeePerGas'])
-            self._max_priority_fee_per_gas = self._web3.eth.max_priority_fee
-            pass
 
         print(f"Current network: {self._current_network}")
         print(f"Network connection status: {self._web3.isConnected()}")
@@ -110,12 +120,11 @@ class BatchManager:
         }
         trans_params['gas'] = contract_func.estimate_gas(estimate_param) #self._web3.toHex(210000)#
 
-        if self._current_network in [Network.eth, Network.goerli]:
-            trans_params['maxFeePerGas'] = self._max_fee_per_gas
-            trans_params[
-                'maxPriorityFeePerGas'] = self._max_priority_fee_per_gas
-        else:
+        if self._current_network in [Network.bsc, Network.bsc_test]:
             trans_params['gasPrice'] = self._web3.eth.gas_price
+        else:
+            trans_params['maxFeePerGas'] = self._max_fee_per_gas
+            trans_params['maxPriorityFeePerGas'] = self._max_priority_fee_per_gas
 
     def call_contract_func(self, wallet, func_name, func_args, contract_func, value=0):
         if len(wallet) <= 1:

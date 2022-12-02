@@ -1,3 +1,5 @@
+from web3 import Web3
+
 from core.batch_manager import Network
 from core.batch_mint_manager import BatchMintManager
 from libs.common import get_file_path
@@ -12,9 +14,10 @@ class ToolHelper:
     _gas_max_fee = 1
     _gas_priority_fee = 1.5
     _is_gas_limit = False
+    _value = 0
 
-    def erc721(self, addr):
-        return ERC721Runner(addr)
+    def contract(self, addr):
+        return ContractRunner(Web3.toChecksumAddress(addr))
 
     def network(self, network):
         self._network = network
@@ -37,8 +40,22 @@ class ToolHelper:
         self._gas_priority_fee = p_fee
         return self
 
+    def value(self, amount=0):
+        self._value = Web3.toWei(amount, 'ether')
+        return self
 
-class ERC721Runner(ToolHelper):
+    def transfer_eth(self, amount, from_wallet, to_wallets_csv):
+        network_data = {
+            self._network: {
+                'addr': self._addr,
+                'contract_abi': self._abi
+            }
+        }
+        b = BatchMintManager(self._network, network_data)
+        b.transfer_money(amount, from_wallet, to_wallets_csv)
+
+
+class ContractRunner(ToolHelper):
     def __init__(self, addr):
         self._addr = addr
         self._abi = self._erc721_abi
@@ -70,7 +87,17 @@ class ERC721Runner(ToolHelper):
         b = BatchMintManager(self._network, network_data)
         b.batch_collect_nft(self._wallet_file_path, self._transfer_to_addr, self._is_transfer)
 
-    def mint(self, method_name, args):
+    def call_read(self, method_name, args):
+        network_data = {
+            self._network: {
+                'addr': self._addr,
+                'contract_abi': self._abi
+            }
+        }
+        b = BatchMintManager(self._network, network_data)
+        return b.call_read_func_with_args(method_name, args)
+
+    def call_write(self, method_name, args):
         network_data = {
             self._network: {
                 'addr': self._addr,
@@ -81,4 +108,7 @@ class ERC721Runner(ToolHelper):
         if self._is_gas_limit:
             b.limit_gas(self._gas_limit, self._gas_max_fee, self._gas_priority_fee)
 
-        b.batch_call_write_func(self._wallet_file_path, method_name, args)
+        if self._value > 0:
+            b.batch_call_write_func_with_value(self._wallet_file_path, self._value, method_name, args)
+        else:
+            b.batch_call_write_func(self._wallet_file_path, method_name, args)
