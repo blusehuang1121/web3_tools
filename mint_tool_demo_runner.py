@@ -1,11 +1,8 @@
 import csv
-import time
 
-from web3 import Web3
 from core.batch_manager import Network
 from core.batch_mint_manager import BatchMintManager
 from core.tool_helper import ToolHelper
-from libs.common import REPLACE_WALLET_ADDR
 
 
 def multi_transfer_using_contract():
@@ -23,92 +20,18 @@ def multi_transfer_using_contract():
     b.multi_transfer(from_wallet, 'xen_mints/wallets_tomint.csv', 0.0005)
 
 
-def interact_with_scroll():
-    # #Transfer Eth to wallets in csv file
-
-    # Scroll L2 转账
-    # with open('xen_mints/base_transfer_wallet.csv') as f:
-    #     reader = csv.reader(f)
-    #     from_wallet = list(reader)[1]
-    # ToolHelper().contract('0x8318ed43dD6760dA6A01B7605C408841e7062419').abi('[]').network(Network.scroll_test_l2).transfer_eth(0.01, from_wallet, 'xen_mints/wallets_tomint.csv')
-
-    # # Bridge from L1 to L2
-    # # L1 bridge contract[0x94Cf11667B017e9Fef7Ab557E2eF9EFf6fdfeDc3 ]
-    # bridge_abi = '[{"inputs":[{"internalType":"uint256","name":"num","type":"uint256"}],"name":"depositETH","outputs":[],"stateMutability":"payable","type":"function"}]'
-    # ToolHelper().contract('0x94Cf11667B017e9Fef7Ab557E2eF9EFf6fdfeDc3')\
-    #      .abi(bridge_abi)\
-    #      .network(Network.scroll_test_l1)\
-    #      .value(0.005)\
-    #      .gas_limit(200000)\
-    #      .gas_max_fee(1.5)\
-    #      .gas_priority_fee(1.5)\
-    #      .wallets('xen_mints/wallets_tomint.csv') \
-    #      .call_write('depositETH', (0))
-    #
-    # # Bridge from L2 to L1
-    # # L2 bridge contract[0x8318ed43dD6760dA6A01B7605C408841e7062419]
-    # bridge_abi = '[{"inputs":[{"internalType":"uint256","name":"num","type":"uint256"}],"name":"withdrawETH","outputs":[],"stateMutability":"payable","type":"function"}]'
-    # ToolHelper().contract('0x8318ed43dD6760dA6A01B7605C408841e7062419') \
-    #     .abi(bridge_abi) \
-    #     .network(Network.scroll_test_l2) \
-    #     .value(0.005) \
-    #     .gas_limit(200000) \
-    #     .gas_max_fee(1.5) \
-    #     .gas_priority_fee(1.5) \
-    #     .wallets('xen_mints/wallets_tomint.csv') \
-    #     .call_write('withdrawETH', (0))
-
-    # #Wrap ether in L2
-    # #WETH contract [0x05fDbDfaE180345C6Cff5316c286727CF1a43327]
-    # weth_abi = '[{"constant":true,"inputs":[],"name":"name","outputs":[{"name":"","type":"string"}],"payable":false,"stateMutability":"view","type":"function"},{"constant":false,"inputs":[{"name":"guy","type":"address"},{"name":"wad","type":"uint256"}],"name":"approve","outputs":[{"name":"","type":"bool"}],"payable":false,"stateMutability":"nonpayable","type":"function"},{"constant":true,"inputs":[],"name":"totalSupply","outputs":[{"name":"","type":"uint256"}],"payable":false,"stateMutability":"view","type":"function"},{"constant":false,"inputs":[{"name":"src","type":"address"},{"name":"dst","type":"address"},{"name":"wad","type":"uint256"}],"name":"transferFrom","outputs":[{"name":"","type":"bool"}],"payable":false,"stateMutability":"nonpayable","type":"function"},{"constant":false,"inputs":[{"name":"wad","type":"uint256"}],"name":"withdraw","outputs":[],"payable":false,"stateMutability":"nonpayable","type":"function"},{"constant":true,"inputs":[],"name":"decimals","outputs":[{"name":"","type":"uint8"}],"payable":false,"stateMutability":"view","type":"function"},{"constant":true,"inputs":[{"name":"","type":"address"}],"name":"balanceOf","outputs":[{"name":"","type":"uint256"}],"payable":false,"stateMutability":"view","type":"function"},{"constant":true,"inputs":[],"name":"symbol","outputs":[{"name":"","type":"string"}],"payable":false,"stateMutability":"view","type":"function"},{"constant":false,"inputs":[{"name":"dst","type":"address"},{"name":"wad","type":"uint256"}],"name":"transfer","outputs":[{"name":"","type":"bool"}],"payable":false,"stateMutability":"nonpayable","type":"function"},{"constant":false,"inputs":[],"name":"deposit","outputs":[],"payable":true,"stateMutability":"payable","type":"function"},{"constant":true,"inputs":[{"name":"","type":"address"},{"name":"","type":"address"}],"name":"allowance","outputs":[{"name":"","type":"uint256"}],"payable":false,"stateMutability":"view","type":"function"},{"payable":true,"stateMutability":"payable","type":"fallback"},{"anonymous":false,"inputs":[{"indexed":true,"name":"src","type":"address"},{"indexed":true,"name":"guy","type":"address"},{"indexed":false,"name":"wad","type":"uint256"}],"name":"Approval","type":"event"},{"anonymous":false,"inputs":[{"indexed":true,"name":"src","type":"address"},{"indexed":true,"name":"dst","type":"address"},{"indexed":false,"name":"wad","type":"uint256"}],"name":"Transfer","type":"event"},{"anonymous":false,"inputs":[{"indexed":true,"name":"dst","type":"address"},{"indexed":false,"name":"wad","type":"uint256"}],"name":"Deposit","type":"event"},{"anonymous":false,"inputs":[{"indexed":true,"name":"src","type":"address"},{"indexed":false,"name":"wad","type":"uint256"}],"name":"Withdrawal","type":"event"}]'
-    # ToolHelper().contract('0x05fDbDfaE180345C6Cff5316c286727CF1a43327')\
-    #     .abi(weth_abi) \
-    #     .network(Network.scroll_test_l2) \
-    #     .value(0.001) \
-    #     .gas_limit(50000)\
-    #     .gas_max_fee(1.5)\
-    #     .gas_priority_fee(1.5)\
-    #     .wallets('xen_mints/wallets_tomint.csv') \
-    #     .call_write('deposit', ())
-
-    # Make swap in L2
-    # Step1, get TSUSDC amount out
-    # uniswap contract [0xEe0e03C1a621084cA3c542F36E4A5D0230304471]
-    # TSUSDC contract [0x80732890c93c6D9c6C23E06F888eD0CB88A06018]
-    amount_in = Web3.toWei(0.0005, 'ether')
-    swap_path = ['0x05fDbDfaE180345C6Cff5316c286727CF1a43327', '0x80732890c93c6D9c6C23E06F888eD0CB88A06018']
-    uniswap_router_abi = '[{"inputs":[{"internalType":"address","name":"_factory","type":"address"},{"internalType":"address","name":"_WETH","type":"address"}],"stateMutability":"nonpayable","type":"constructor"},{"inputs":[],"name":"WETH","outputs":[{"internalType":"address","name":"","type":"address"}],"stateMutability":"view","type":"function"},{"inputs":[{"internalType":"address","name":"tokenA","type":"address"},{"internalType":"address","name":"tokenB","type":"address"},{"internalType":"uint256","name":"amountADesired","type":"uint256"},{"internalType":"uint256","name":"amountBDesired","type":"uint256"},{"internalType":"uint256","name":"amountAMin","type":"uint256"},{"internalType":"uint256","name":"amountBMin","type":"uint256"},{"internalType":"address","name":"to","type":"address"},{"internalType":"uint256","name":"deadline","type":"uint256"}],"name":"addLiquidity","outputs":[{"internalType":"uint256","name":"amountA","type":"uint256"},{"internalType":"uint256","name":"amountB","type":"uint256"},{"internalType":"uint256","name":"liquidity","type":"uint256"}],"stateMutability":"nonpayable","type":"function"},{"inputs":[{"internalType":"address","name":"token","type":"address"},{"internalType":"uint256","name":"amountTokenDesired","type":"uint256"},{"internalType":"uint256","name":"amountTokenMin","type":"uint256"},{"internalType":"uint256","name":"amountETHMin","type":"uint256"},{"internalType":"address","name":"to","type":"address"},{"internalType":"uint256","name":"deadline","type":"uint256"}],"name":"addLiquidityETH","outputs":[{"internalType":"uint256","name":"amountToken","type":"uint256"},{"internalType":"uint256","name":"amountETH","type":"uint256"},{"internalType":"uint256","name":"liquidity","type":"uint256"}],"stateMutability":"payable","type":"function"},{"inputs":[],"name":"factory","outputs":[{"internalType":"address","name":"","type":"address"}],"stateMutability":"view","type":"function"},{"inputs":[{"internalType":"uint256","name":"amountOut","type":"uint256"},{"internalType":"uint256","name":"reserveIn","type":"uint256"},{"internalType":"uint256","name":"reserveOut","type":"uint256"}],"name":"getAmountIn","outputs":[{"internalType":"uint256","name":"amountIn","type":"uint256"}],"stateMutability":"pure","type":"function"},{"inputs":[{"internalType":"uint256","name":"amountIn","type":"uint256"},{"internalType":"uint256","name":"reserveIn","type":"uint256"},{"internalType":"uint256","name":"reserveOut","type":"uint256"}],"name":"getAmountOut","outputs":[{"internalType":"uint256","name":"amountOut","type":"uint256"}],"stateMutability":"pure","type":"function"},{"inputs":[{"internalType":"uint256","name":"amountOut","type":"uint256"},{"internalType":"address[]","name":"path","type":"address[]"}],"name":"getAmountsIn","outputs":[{"internalType":"uint256[]","name":"amounts","type":"uint256[]"}],"stateMutability":"view","type":"function"},{"inputs":[{"internalType":"uint256","name":"amountIn","type":"uint256"},{"internalType":"address[]","name":"path","type":"address[]"}],"name":"getAmountsOut","outputs":[{"internalType":"uint256[]","name":"amounts","type":"uint256[]"}],"stateMutability":"view","type":"function"},{"inputs":[{"internalType":"uint256","name":"amountA","type":"uint256"},{"internalType":"uint256","name":"reserveA","type":"uint256"},{"internalType":"uint256","name":"reserveB","type":"uint256"}],"name":"quote","outputs":[{"internalType":"uint256","name":"amountB","type":"uint256"}],"stateMutability":"pure","type":"function"},{"inputs":[{"internalType":"address","name":"tokenA","type":"address"},{"internalType":"address","name":"tokenB","type":"address"},{"internalType":"uint256","name":"liquidity","type":"uint256"},{"internalType":"uint256","name":"amountAMin","type":"uint256"},{"internalType":"uint256","name":"amountBMin","type":"uint256"},{"internalType":"address","name":"to","type":"address"},{"internalType":"uint256","name":"deadline","type":"uint256"}],"name":"removeLiquidity","outputs":[{"internalType":"uint256","name":"amountA","type":"uint256"},{"internalType":"uint256","name":"amountB","type":"uint256"}],"stateMutability":"nonpayable","type":"function"},{"inputs":[{"internalType":"address","name":"token","type":"address"},{"internalType":"uint256","name":"liquidity","type":"uint256"},{"internalType":"uint256","name":"amountTokenMin","type":"uint256"},{"internalType":"uint256","name":"amountETHMin","type":"uint256"},{"internalType":"address","name":"to","type":"address"},{"internalType":"uint256","name":"deadline","type":"uint256"}],"name":"removeLiquidityETH","outputs":[{"internalType":"uint256","name":"amountToken","type":"uint256"},{"internalType":"uint256","name":"amountETH","type":"uint256"}],"stateMutability":"nonpayable","type":"function"},{"inputs":[{"internalType":"address","name":"token","type":"address"},{"internalType":"uint256","name":"liquidity","type":"uint256"},{"internalType":"uint256","name":"amountTokenMin","type":"uint256"},{"internalType":"uint256","name":"amountETHMin","type":"uint256"},{"internalType":"address","name":"to","type":"address"},{"internalType":"uint256","name":"deadline","type":"uint256"}],"name":"removeLiquidityETHSupportingFeeOnTransferTokens","outputs":[{"internalType":"uint256","name":"amountETH","type":"uint256"}],"stateMutability":"nonpayable","type":"function"},{"inputs":[{"internalType":"address","name":"token","type":"address"},{"internalType":"uint256","name":"liquidity","type":"uint256"},{"internalType":"uint256","name":"amountTokenMin","type":"uint256"},{"internalType":"uint256","name":"amountETHMin","type":"uint256"},{"internalType":"address","name":"to","type":"address"},{"internalType":"uint256","name":"deadline","type":"uint256"},{"internalType":"bool","name":"approveMax","type":"bool"},{"internalType":"uint8","name":"v","type":"uint8"},{"internalType":"bytes32","name":"r","type":"bytes32"},{"internalType":"bytes32","name":"s","type":"bytes32"}],"name":"removeLiquidityETHWithPermit","outputs":[{"internalType":"uint256","name":"amountToken","type":"uint256"},{"internalType":"uint256","name":"amountETH","type":"uint256"}],"stateMutability":"nonpayable","type":"function"},{"inputs":[{"internalType":"address","name":"token","type":"address"},{"internalType":"uint256","name":"liquidity","type":"uint256"},{"internalType":"uint256","name":"amountTokenMin","type":"uint256"},{"internalType":"uint256","name":"amountETHMin","type":"uint256"},{"internalType":"address","name":"to","type":"address"},{"internalType":"uint256","name":"deadline","type":"uint256"},{"internalType":"bool","name":"approveMax","type":"bool"},{"internalType":"uint8","name":"v","type":"uint8"},{"internalType":"bytes32","name":"r","type":"bytes32"},{"internalType":"bytes32","name":"s","type":"bytes32"}],"name":"removeLiquidityETHWithPermitSupportingFeeOnTransferTokens","outputs":[{"internalType":"uint256","name":"amountETH","type":"uint256"}],"stateMutability":"nonpayable","type":"function"},{"inputs":[{"internalType":"address","name":"tokenA","type":"address"},{"internalType":"address","name":"tokenB","type":"address"},{"internalType":"uint256","name":"liquidity","type":"uint256"},{"internalType":"uint256","name":"amountAMin","type":"uint256"},{"internalType":"uint256","name":"amountBMin","type":"uint256"},{"internalType":"address","name":"to","type":"address"},{"internalType":"uint256","name":"deadline","type":"uint256"},{"internalType":"bool","name":"approveMax","type":"bool"},{"internalType":"uint8","name":"v","type":"uint8"},{"internalType":"bytes32","name":"r","type":"bytes32"},{"internalType":"bytes32","name":"s","type":"bytes32"}],"name":"removeLiquidityWithPermit","outputs":[{"internalType":"uint256","name":"amountA","type":"uint256"},{"internalType":"uint256","name":"amountB","type":"uint256"}],"stateMutability":"nonpayable","type":"function"},{"inputs":[{"internalType":"uint256","name":"amountOut","type":"uint256"},{"internalType":"address[]","name":"path","type":"address[]"},{"internalType":"address","name":"to","type":"address"},{"internalType":"uint256","name":"deadline","type":"uint256"}],"name":"swapETHForExactTokens","outputs":[{"internalType":"uint256[]","name":"amounts","type":"uint256[]"}],"stateMutability":"payable","type":"function"},{"inputs":[{"internalType":"uint256","name":"amountOutMin","type":"uint256"},{"internalType":"address[]","name":"path","type":"address[]"},{"internalType":"address","name":"to","type":"address"},{"internalType":"uint256","name":"deadline","type":"uint256"}],"name":"swapExactETHForTokens","outputs":[{"internalType":"uint256[]","name":"amounts","type":"uint256[]"}],"stateMutability":"payable","type":"function"},{"inputs":[{"internalType":"uint256","name":"amountOutMin","type":"uint256"},{"internalType":"address[]","name":"path","type":"address[]"},{"internalType":"address","name":"to","type":"address"},{"internalType":"uint256","name":"deadline","type":"uint256"}],"name":"swapExactETHForTokensSupportingFeeOnTransferTokens","outputs":[],"stateMutability":"payable","type":"function"},{"inputs":[{"internalType":"uint256","name":"amountIn","type":"uint256"},{"internalType":"uint256","name":"amountOutMin","type":"uint256"},{"internalType":"address[]","name":"path","type":"address[]"},{"internalType":"address","name":"to","type":"address"},{"internalType":"uint256","name":"deadline","type":"uint256"}],"name":"swapExactTokensForETH","outputs":[{"internalType":"uint256[]","name":"amounts","type":"uint256[]"}],"stateMutability":"nonpayable","type":"function"},{"inputs":[{"internalType":"uint256","name":"amountIn","type":"uint256"},{"internalType":"uint256","name":"amountOutMin","type":"uint256"},{"internalType":"address[]","name":"path","type":"address[]"},{"internalType":"address","name":"to","type":"address"},{"internalType":"uint256","name":"deadline","type":"uint256"}],"name":"swapExactTokensForETHSupportingFeeOnTransferTokens","outputs":[],"stateMutability":"nonpayable","type":"function"},{"inputs":[{"internalType":"uint256","name":"amountIn","type":"uint256"},{"internalType":"uint256","name":"amountOutMin","type":"uint256"},{"internalType":"address[]","name":"path","type":"address[]"},{"internalType":"address","name":"to","type":"address"},{"internalType":"uint256","name":"deadline","type":"uint256"}],"name":"swapExactTokensForTokens","outputs":[{"internalType":"uint256[]","name":"amounts","type":"uint256[]"}],"stateMutability":"nonpayable","type":"function"},{"inputs":[{"internalType":"uint256","name":"amountIn","type":"uint256"},{"internalType":"uint256","name":"amountOutMin","type":"uint256"},{"internalType":"address[]","name":"path","type":"address[]"},{"internalType":"address","name":"to","type":"address"},{"internalType":"uint256","name":"deadline","type":"uint256"}],"name":"swapExactTokensForTokensSupportingFeeOnTransferTokens","outputs":[],"stateMutability":"nonpayable","type":"function"},{"inputs":[{"internalType":"uint256","name":"amountOut","type":"uint256"},{"internalType":"uint256","name":"amountInMax","type":"uint256"},{"internalType":"address[]","name":"path","type":"address[]"},{"internalType":"address","name":"to","type":"address"},{"internalType":"uint256","name":"deadline","type":"uint256"}],"name":"swapTokensForExactETH","outputs":[{"internalType":"uint256[]","name":"amounts","type":"uint256[]"}],"stateMutability":"nonpayable","type":"function"},{"inputs":[{"internalType":"uint256","name":"amountOut","type":"uint256"},{"internalType":"uint256","name":"amountInMax","type":"uint256"},{"internalType":"address[]","name":"path","type":"address[]"},{"internalType":"address","name":"to","type":"address"},{"internalType":"uint256","name":"deadline","type":"uint256"}],"name":"swapTokensForExactTokens","outputs":[{"internalType":"uint256[]","name":"amounts","type":"uint256[]"}],"stateMutability":"nonpayable","type":"function"},{"stateMutability":"payable","type":"receive"}]'
-    amount_path_out = ToolHelper().contract('0xEe0e03C1a621084cA3c542F36E4A5D0230304471')\
-        .abi(uniswap_router_abi)\
-        .network(Network.scroll_test_l2)\
-        .wallets('xen_mints/wallets_tomint.csv') \
-        .call_read('getAmountsOut', (amount_in, swap_path))
-
-    #Step 2, make swap TSETH to TSUSDC
-    amount_out = amount_path_out[1]
-    deadline = int(time.time() + 60)
-    ToolHelper().contract('0xEe0e03C1a621084cA3c542F36E4A5D0230304471')\
-        .abi(uniswap_router_abi)\
-        .value(0.0005)\
-        .network(Network.scroll_test_l2) \
-        .gas_limit(200000) \
-        .gas_max_fee(1.5)\
-        .gas_priority_fee(1.5)\
-        .wallets('xen_mints/wallets_tomint.csv') \
-        .call_write('swapExactETHForTokens', (amount_out, swap_path, REPLACE_WALLET_ADDR, deadline))
-
 if __name__ == '__main__':
     print('Demo batch functions for batch mint')
 
     # enegy core contract: 0xBC867E76D1360b2D21eB1C2753f94b1C103415e1
     # leggi contract: 0xfE542c1FEcc88f1d8B0E53171B8E4d486391fb98
 
-    #扫描csv文件里的所有钱包，是否有指定地址的nft
-    # ToolHelper().contract('0xBC867E76D1360b2D21eB1C2753f94b1C103415e1')\
-    #     .network(Network.bsc)\
-    #     .only_scan()\
-    #     .wallets('xen_mints/wallets_tomint.csv')\
-    #     .collect_nft()
+    # 扫描csv文件里的所有钱包，是否有指定地址的nft
+    ToolHelper().contract('0xBC867E76D1360b2D21eB1C2753f94b1C103415e1') \
+        .network(Network.bsc) \
+        .only_scan() \
+        .wallets('xen_mints/wallets_tomint.csv') \
+        .collect_nft()
 
     # 扫描csv文件里的所有钱包，将指定地址的nft全部归集到某个钱包内
     # ToolHelper().contract('0xfE542c1FEcc88f1d8B0E53171B8E4d486391fb98')\
@@ -117,18 +40,10 @@ if __name__ == '__main__':
     #     .transfer_to('xxxx')\
     #     .collect_nft()
 
-    #批量mint nft，指定合约地址或者设置gas
+    # 批量mint nft，指定合约地址或者设置gas
     # c_abi = '[{"inputs":[{"components":[{"internalType":"string","name":"name","type":"string"},{"internalType":"address","name":"addr","type":"address"},{"internalType":"uint256","name":"mintValue","type":"uint256"}],"internalType":"struct MockTokenFaucet.Token[]","name":"erc20Tokens","type":"tuple[]"},{"components":[{"internalType":"string","name":"name","type":"string"},{"internalType":"address","name":"addr","type":"address"},{"internalType":"uint256","name":"mintValue","type":"uint256"}],"internalType":"struct MockTokenFaucet.Token[]","name":"erc721Tokens","type":"tuple[]"},{"components":[{"internalType":"string","name":"name","type":"string"},{"internalType":"address","name":"addr","type":"address"},{"internalType":"uint256","name":"mintValue","type":"uint256"}],"internalType":"struct MockTokenFaucet.Token","name":"punks","type":"tuple"}],"stateMutability":"nonpayable","type":"constructor"},{"anonymous":false,"inputs":[{"indexed":true,"internalType":"address","name":"previousOwner","type":"address"},{"indexed":true,"internalType":"address","name":"newOwner","type":"address"}],"name":"OwnershipTransferred","type":"event"},{"inputs":[{"components":[{"internalType":"string","name":"name","type":"string"},{"internalType":"address","name":"addr","type":"address"},{"internalType":"uint256","name":"mintValue","type":"uint256"}],"internalType":"struct MockTokenFaucet.Token[]","name":"_tokens","type":"tuple[]"}],"name":"addERC20","outputs":[],"stateMutability":"nonpayable","type":"function"},{"inputs":[{"components":[{"internalType":"string","name":"name","type":"string"},{"internalType":"address","name":"addr","type":"address"},{"internalType":"uint256","name":"mintValue","type":"uint256"}],"internalType":"struct MockTokenFaucet.Token[]","name":"_tokens","type":"tuple[]"}],"name":"addERC721","outputs":[],"stateMutability":"nonpayable","type":"function"},{"inputs":[],"name":"allMockERC20Tokens","outputs":[{"components":[{"internalType":"string","name":"name","type":"string"},{"internalType":"address","name":"addr","type":"address"},{"internalType":"uint256","name":"mintValue","type":"uint256"}],"internalType":"struct MockTokenFaucet.Token[]","name":"","type":"tuple[]"}],"stateMutability":"view","type":"function"},{"inputs":[],"name":"allMockERC721Tokens","outputs":[{"components":[{"internalType":"string","name":"name","type":"string"},{"internalType":"address","name":"addr","type":"address"},{"internalType":"uint256","name":"mintValue","type":"uint256"}],"internalType":"struct MockTokenFaucet.Token[]","name":"","type":"tuple[]"}],"stateMutability":"view","type":"function"},{"inputs":[],"name":"cryptoPunks","outputs":[{"internalType":"contract ICryptoPunksMarket","name":"","type":"address"}],"stateMutability":"view","type":"function"},{"inputs":[{"internalType":"address","name":"to","type":"address"}],"name":"mint","outputs":[],"stateMutability":"nonpayable","type":"function"},{"inputs":[{"internalType":"address","name":"token","type":"address"},{"internalType":"address","name":"to","type":"address"},{"internalType":"uint256","name":"mintValue","type":"uint256"}],"name":"mintERC20","outputs":[],"stateMutability":"nonpayable","type":"function"},{"inputs":[{"internalType":"address","name":"token","type":"address"},{"internalType":"address","name":"to","type":"address"},{"internalType":"uint256","name":"mintValue","type":"uint256"}],"name":"mintERC721","outputs":[],"stateMutability":"nonpayable","type":"function"},{"inputs":[],"name":"owner","outputs":[{"internalType":"address","name":"","type":"address"}],"stateMutability":"view","type":"function"},{"inputs":[{"internalType":"address[]","name":"_tokens","type":"address[]"}],"name":"removeERC20","outputs":[],"stateMutability":"nonpayable","type":"function"},{"inputs":[{"internalType":"address[]","name":"_tokens","type":"address[]"}],"name":"removeERC721","outputs":[],"stateMutability":"nonpayable","type":"function"},{"inputs":[],"name":"renounceOwnership","outputs":[],"stateMutability":"nonpayable","type":"function"},{"inputs":[{"internalType":"address","name":"","type":"address"}],"name":"tokenInfo","outputs":[{"internalType":"string","name":"name","type":"string"},{"internalType":"address","name":"addr","type":"address"},{"internalType":"uint256","name":"mintValue","type":"uint256"}],"stateMutability":"view","type":"function"},{"inputs":[{"internalType":"address","name":"newOwner","type":"address"}],"name":"transferOwnership","outputs":[],"stateMutability":"nonpayable","type":"function"},{"inputs":[{"components":[{"internalType":"string","name":"name","type":"string"},{"internalType":"address","name":"addr","type":"address"},{"internalType":"uint256","name":"mintValue","type":"uint256"}],"internalType":"struct MockTokenFaucet.Token","name":"punk","type":"tuple"}],"name":"updatePunk","outputs":[],"stateMutability":"nonpayable","type":"function"},{"inputs":[{"internalType":"address","name":"_token","type":"address"},{"internalType":"address","name":"_account","type":"address"},{"internalType":"uint256","name":"_amount","type":"uint256"}],"name":"withdrawERC20","outputs":[],"stateMutability":"nonpayable","type":"function"}]'
     # ToolHelper().contract('0x6BABAdFfBD254b386387290cce48e3011bb1F882')\
     #     .abi(c_abi)\
     #     .network(Network.goerli)\
     #     .wallets('xen_mints/wallets_tomint.csv') \
     #     .call_write('mint', (Web3.toChecksumAddress('0x1C3Ab4068337A13533246b3e6ac226BdE74579cb')))
-
-    #批量操作scroll
-    interact_with_scroll()
-
-
-
-
-

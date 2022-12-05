@@ -131,3 +131,5 @@ dmypy.json
 /.idea/*
 /xen_mints
 /conf/configs
+/conf/proxies
+/scroll_result.txt

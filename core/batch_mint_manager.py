@@ -25,13 +25,19 @@ class BatchMintManager(BatchManager):
 
     def call_read_func_with_args(self, func_name, func_args: tuple):
         result = self._contract.get_function_by_name(func_name)(*func_args).call()
-        print(result)
+        # print(result)
         return result
 
     def call_read_func(self, func_name):
         result = self._contract.get_function_by_name(func_name)().call()
-        print(result)
+        # print(result)
         return result
+
+    def single_call_write_func_with_value(self, wallet, value, func_name, func_args):
+        self.each_call_func(wallet, value, func_name, func_args)
+
+    def single_call_write_func(self, wallet, func_name, func_args):
+        self.each_call_func(wallet, 0, func_name, func_args)
 
     def batch_call_write_func_with_value(self, csv_path, value, func_name, func_args):
         callback = lambda wallet: {
@@ -65,7 +71,7 @@ class BatchMintManager(BatchManager):
         try:
             self.call_contract_func(wallet, func_name, args, contract_func, value)
         except Exception as e:
-            print(f'Call contract func has an error {wallet[Addr_Index]}, {repr(e)}')
+            print(f'[Failed] Call contract func has an error {wallet[Addr_Index]}, {repr(e)}')
 
     def update_mint_gas(self, contract_func, trans_params):
         if not self._is_gas_limited:
