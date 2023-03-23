@@ -47,3 +47,8 @@ if __name__ == '__main__':
 
     # 批量获得代币并转移
     # batch_claim_mint_reward_and_share()
+
+
+
+
+

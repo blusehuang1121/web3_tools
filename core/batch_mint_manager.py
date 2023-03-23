@@ -81,8 +81,8 @@ class BatchMintManager(BatchManager):
             if self._current_network in [Network.bsc, Network.bsc_test]:
                 trans_params['gasPrice'] = self._web3.eth.gas_price
             else:
-                trans_params['maxFeePerGas'] = self._web3.toWei(self._gas_max_fee, 'gwei')
-                trans_params['maxPriorityFeePerGas'] = self._web3.toWei(self._priority_fee, 'gwei')
+                trans_params['maxFeePerGas'] = self._web3.to_wei(self._gas_max_fee, 'gwei')
+                trans_params['maxPriorityFeePerGas'] = self._web3.to_wei(self._priority_fee, 'gwei')
 
     def batch_collect_nft(self, csv_path, to_addr, is_transfer):
         callback = lambda wallet: {
@@ -112,7 +112,7 @@ class BatchMintManager(BatchManager):
             token_id = int(each_result['token_id'])
             print(f'Start to Collect nft from Wallet {wallet[No_Index]} {wallet[Addr_Index]} {token_id}...')
             self.each_call_func(wallet, 'transferFrom',
-                                (Web3.toChecksumAddress(wallet[Addr_Index]), Web3.toChecksumAddress(to_addr), token_id))
+                                (Web3.to_checksum_address(wallet[Addr_Index]), Web3.to_checksum_address(to_addr), token_id))
 
     def multi_transfer(self, from_wallet, csv_path, amount=0):
         wallets = []
@@ -125,11 +125,11 @@ class BatchMintManager(BatchManager):
         self.read_wallets_and_callback(csv_path, callback)
 
         for w in wallets:
-            amount_wei = self._web3.toWei(amount, 'ether')
+            amount_wei = self._web3.to_wei(amount, 'ether')
             amounts.append(amount_wei)
             total_value += amount_wei
 
-        total_value += self._web3.toWei(0.001, 'ether')
+        total_value += self._web3.to_wei(0.001, 'ether')
 
         func_name = 'multisendEther'
         contract_func = self._contract.get_function_by_name(func_name)(wallets, amounts)

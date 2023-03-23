@@ -18,7 +18,7 @@ class ToolHelper:
     _is_wait_for_complete = False
 
     def contract(self, addr):
-        return ContractRunner(Web3.toChecksumAddress(addr))
+        return ContractRunner(Web3.to_checksum_address(addr))
 
     def network(self, network):
         self._network = network
@@ -52,7 +52,7 @@ class ToolHelper:
         return b.get_balance(wallet)
 
     def value(self, amount=0):
-        self._value = Web3.toWei(amount, 'ether')
+        self._value = Web3.to_wei(amount, 'ether')
         return self
 
     def transfer_eth(self, amount, from_wallet, to_wallets_csv):
@@ -130,6 +130,7 @@ class ContractRunner(ToolHelper):
     def wait_for_complete(self, is_wait):
         self._is_wait_for_complete = is_wait
         return self
+
 
     def call_write(self, method_name, args):
         network_data = {

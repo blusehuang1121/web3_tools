@@ -18,13 +18,16 @@ class Network(Enum):
     sepolia = 4,
     bsc_test = 5,
     scroll_test_l1 = 6,
-    scroll_test_l2 = 7
+    scroll_test_l2 = 7,
+    zksync_testnet = 8,
+    scroll_alpha = 9
 
 
 No_Index = 0
 Addr_Index = 1
 PriKey_Index = 2
 
+LastNonceMap = {}
 
 # using https://chainlist.org to find the best RPC url
 class BatchManager:
@@ -64,11 +67,21 @@ class BatchManager:
         Network.scroll_test_l2: {
             'rpc': 'https://prealpha.scroll.io/l2',
             'chain_id': 534354
+        },
+        Network.zksync_testnet: {
+            'rpc': 'https://zksync2-testnet.zksync.dev',
+            'chain_id': 280
+        },
+        Network.scroll_alpha: {
+            'rpc': 'https://alpha-rpc.scroll.io/l2',
+            'chain_id': 534353
         }
     }
 
     def __init__(self, network, network_data):
         self._last_nonce = -1
+        if network in LastNonceMap.keys():
+            self._last_nonce = LastNonceMap.get(network)
 
         for net, info in self._network_info.items():
             merged_info = info.copy()
@@ -96,8 +109,8 @@ class BatchManager:
 
         self._contract = self._web3.eth.contract(address=self._addr, abi=self._abi)
         self._web3.eth.set_gas_price_strategy(medium_gas_price_strategy)
-        self._max_priority_fee_per_gas = self._web3.eth.max_priority_fee
-        self._max_fee_per_gas = self._web3.eth.max_priority_fee * 2
+        # self._max_priority_fee_per_gas = self._web3.eth.max_priority_fee
+        # self._max_fee_per_gas = self._web3.eth.max_priority_fee * 2
 
         if network in [Network.bsc, Network.bsc_test]:
             self._web3.middleware_onion.inject(geth_poa_middleware, layer=0)
@@ -105,7 +118,7 @@ class BatchManager:
             self._max_fee_per_gas = self._web3.eth.max_priority_fee + int(
                 self._max_fee_multiply * self._web3.eth.get_block('latest')['baseFeePerGas'])
 
-        print(f"Current network: {self._current_network}, Connection status: {self._web3.isConnected()}")
+        print(f"Current network: {self._current_network}, Connection status: {self._web3.is_connected()}")
 
     @staticmethod
     def write_info_to_file(info_data, info_csv_path):
@@ -151,7 +164,7 @@ class BatchManager:
             'chainId': self._chain_id,
             "from": addr,
             'to': self._addr,
-            "nonce": self._web3.eth.getTransactionCount(addr),
+            "nonce": self._web3.eth.get_transaction_count(addr),
             'data': encodedData
         }
         if value > 0:
@@ -159,11 +172,11 @@ class BatchManager:
 
         self.update_mint_gas(contract_func, trans_params)
         print(f'[Wallet {wallet[No_Index]}] Start to {func_name} from {addr} {trans_params}')
-        signed_tx = self._web3.eth.account.signTransaction(trans_params, private_key=private_key)
+        signed_tx = self._web3.eth.account.sign_transaction(trans_params, private_key=private_key)
         tx_hash = self._web3.eth.send_raw_transaction(signed_tx.rawTransaction)
-        print(f'Transaction sent to chain...{self._web3.toHex(tx_hash)}')
+        print(f'Transaction sent to chain...{self._web3.to_hex(tx_hash)}')
         if self._is_wait_for_complete:
-            self._web3.eth.waitForTransactionReceipt(tx_hash)
+            self._web3.eth.wait_for_transaction_receipt(tx_hash)
         # receipt = self._web3.eth.waitForTransactionReceipt(tx_hash)
         # print("Transaction receipt mined: \n")
         # print(dict(receipt))
@@ -179,39 +192,45 @@ class BatchManager:
                 callback(each_wallet)
 
     def is_connect(self):
-        return self._web3.isConnected()
+        return self._web3.is_connected()
 
     def transfer_money_single(self, amount, from_wallet, to_wallet):
         if len(to_wallet) < 1:
             return
-        from_addr = Web3.toChecksumAddress(from_wallet[Addr_Index])
-        to_addr = Web3.toChecksumAddress(to_wallet[Addr_Index])
+        from_addr = Web3.to_checksum_address(from_wallet[Addr_Index])
+        to_addr = Web3.to_checksum_address(to_wallet[Addr_Index])
         if from_addr == to_addr:
             return
         nonce = self._web3.eth.get_transaction_count(from_addr)
 
+        try_count = 0
         while nonce <= self._last_nonce:
             print('.', end=' ')
             time.sleep(1)
             nonce = self._web3.eth.get_transaction_count(from_addr)
+            try_count += 1
+            if try_count > 120:
+                nonce += 1
+                break
 
         self._last_nonce = nonce
+        LastNonceMap[self._current_network] = nonce
         params = {
             'chainId': self._chain_id,
             'nonce': nonce,
             'from': from_addr,
             'to': to_addr,
-            'value': self._web3.toWei(amount, 'ether'),
+            'value': self._web3.to_wei(amount, 'ether'),
             'gas': 21000,
         }
         self.update_transfer_gas(from_addr, to_addr, params)
         print(
-            f'[wallet {to_wallet[No_Index]}] Transferring {amount} from {from_wallet[Addr_Index]} to {to_wallet[Addr_Index]}, Chain:{self._chain_id}, Nonce:{params["nonce"]}, GasLimit:{params["gas"]}')
+            f'[wallet {to_wallet[No_Index]}] Transferring {amount} from {from_wallet[Addr_Index]} to {to_wallet[Addr_Index]}, Chain:{self._chain_id}, Nonce:{params["nonce"]}, GasLimit:{params["gas"]}, GasPrice:{params["maxFeePerGas"]}')
         signed_tx = self._web3.eth.account.sign_transaction(params, private_key=from_wallet[PriKey_Index])
         tx_hash = self._web3.eth.send_raw_transaction(signed_tx.rawTransaction)
-        print(f'Eth Transfer sent to chain...{self._web3.toHex(tx_hash)}')
+        print(f'Eth Transfer sent to chain...{self._web3.to_hex(tx_hash)}')
         if self._is_wait_for_complete:
-            self._web3.eth.waitForTransactionReceipt(tx_hash)
+            self._web3.eth.wait_for_transaction_receipt(tx_hash)
         # print("Transaction receipt mined: \n")
 
     def transfer_money(self, amount, from_wallet, csv_path):
@@ -225,17 +244,17 @@ class BatchManager:
             self.transfer_money_single(amount, from_wallet, to_wallet)
 
     def update_transfer_gas(self, from_addr, to_addr, trans_params):
-        estimate_gas = self._web3.eth.estimateGas({'to': from_addr, 'from': to_addr, 'value': 0})
+        estimate_gas = self._web3.eth.estimate_gas({'to': from_addr, 'from': to_addr, 'value': 0})
         trans_params['gas'] = estimate_gas
 
         if self._current_network in [Network.eth, Network.goerli]:
-            trans_params['maxFeePerGas'] = max(self._max_fee_per_gas, self._web3.toWei(3, 'gwei'))
-            trans_params['maxPriorityFeePerGas'] = max(self._max_priority_fee_per_gas, self._web3.toWei(1.5, 'gwei'))
+            trans_params['maxFeePerGas'] = max(self._max_fee_per_gas * 2, self._web3.to_wei(3, 'gwei'))
+            trans_params['maxPriorityFeePerGas'] = max(self._web3.eth.max_priority_fee, self._web3.to_wei(1.5 * 2, 'gwei'))
         else:
             trans_params['gasPrice'] = self._web3.eth.gas_price
 
     def get_balance(self, wallet):
-        return self._web3.fromWei(self._web3.eth.getBalance(Web3.toChecksumAddress(wallet[Addr_Index])), "ether")
+        return self._web3.from_wei(self._web3.eth.get_balance(Web3.to_checksum_address(wallet[Addr_Index])), "ether")
 
     def batch_get_balance(self, csv_path):
         wallets = []
@@ -246,5 +265,5 @@ class BatchManager:
         for wallet in wallets:
             if len(wallet) < 1:
                 continue
-            balance = self._web3.fromWei(self._web3.eth.getBalance(Web3.toChecksumAddress(wallet[Addr_Index])), "ether")
+            balance = self._web3.from_wei(self._web3.eth.get_balance(Web3.to_checksum_address(wallet[Addr_Index])), "ether")
             print(f'Wallet {wallet[No_Index]} {wallet[Addr_Index]} balance {balance}')

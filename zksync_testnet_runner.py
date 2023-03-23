@@ -23,30 +23,29 @@ l1_bridge_amount = get_random_amount(0.005)
 l2_bridge_amount = get_random_amount(0.004)
 
 
-def interact_single_wallet_with_scroll_l1(base_wallet, to_wallet):
+def interact_single_wallet_with_zksync(base_wallet, to_wallet):
     # Transfer Eth to wallets in csv file
-    # Scroll L2 转账
-    print('*************开始转账到L1的小钱包****************')
-    ToolHelper().contract('0x8318ed43dD6760dA6A01B7605C408841e7062419') \
+    print('*************开始转账到小钱包****************')
+    ToolHelper().contract('0x60371a3af7eA5A1cE594de2E419FF942134B1F70') \
         .abi('[]') \
-        .network(Network.scroll_test_l1) \
+        .network(Network.zksync_testnet) \
         .wait_for_complete(True) \
-        .transfer_eth_single(get_random_amount(0.0065), base_wallet, to_wallet)
+        .transfer_eth_single(get_random_amount(0.01), base_wallet, to_wallet)
 
-    # Bridge from L1 to L2
-    # L1 bridge contract[0x94Cf11667B017e9Fef7Ab557E2eF9EFf6fdfeDc3 ]
-    print('*************开始跨链，从L1到L2****************')
-    bridge_abi = '[{"inputs":[{"internalType":"uint256","name":"num","type":"uint256"}],"name":"depositETH","outputs":[],"stateMutability":"payable","type":"function"}]'
-    ToolHelper().contract('0x94Cf11667B017e9Fef7Ab557E2eF9EFf6fdfeDc3') \
-        .abi(bridge_abi) \
-        .network(Network.scroll_test_l1) \
-        .value(l1_bridge_amount) \
-        .gas_limit(130000) \
-        .gas_max_fee(1.5) \
-        .gas_priority_fee(1.5) \
-        .wallet(to_wallet) \
-        .wait_for_complete(True) \
-        .call_write('depositETH', (0))
+    # # Bridge from L1 to L2
+    # # L1 bridge contract[0x94Cf11667B017e9Fef7Ab557E2eF9EFf6fdfeDc3 ]
+    # print('*************开始跨链，从L1到L2****************')
+    # bridge_abi = '[{"inputs":[{"internalType":"uint256","name":"num","type":"uint256"}],"name":"depositETH","outputs":[],"stateMutability":"payable","type":"function"}]'
+    # ToolHelper().contract('0x94Cf11667B017e9Fef7Ab557E2eF9EFf6fdfeDc3') \
+    #     .abi(bridge_abi) \
+    #     .network(Network.scroll_test_l1) \
+    #     .value(l1_bridge_amount) \
+    #     .gas_limit(130000) \
+    #     .gas_max_fee(1.5) \
+    #     .gas_priority_fee(1.5) \
+    #     .wallet(to_wallet) \
+    #     .wait_for_complete(True) \
+    #     .call_write('depositETH', (0))
 
 
 def interact_single_wallet_with_scroll_l2(to_wallet):
@@ -83,7 +82,7 @@ def add_liquidity_eth_usdc(to_wallet):
         .gas_priority_fee(1.5) \
         .wallet(to_wallet) \
         .call_write('addLiquidityETH', (
-        Web3.toChecksumAddress('0x80732890c93c6D9c6C23E06F888eD0CB88A06018'), amount_out, 0, 0, REPLACE_WALLET_ADDR,
+        Web3.to_checksum_address('0x80732890c93c6D9c6C23E06F888eD0CB88A06018'), amount_out, 0, 0, REPLACE_WALLET_ADDR,
         deadline))
 
 
@@ -94,7 +93,7 @@ def swap_from_eth_to_usdc(to_wallet):
     # TSUSDC contract [0x80732890c93c6D9c6C23E06F888eD0CB88A06018]
     print('*************开始Swap，把ETH换成USDC****************')
     swap_eu = l2_bridge_amount / 5
-    amount_in = Web3.toWei(swap_eu, 'ether')
+    amount_in = Web3.to_wei(swap_eu, 'ether')
     swap_path = [weth_contract_addr, usdc_contract_addr]
     amount_path_out = ToolHelper().contract(swap_contract_addr) \
         .abi(uniswap_router_abi) \
@@ -161,53 +160,68 @@ def approve_usdc_in_l2(to_wallet):
         .wallet(to_wallet) \
         .wait_for_complete(True) \
         .call_write('approve', (
-        Web3.toChecksumAddress('0xEe0e03C1a621084cA3c542F36E4A5D0230304471'), Web3.toWei(2 ** 64 - 1, 'ether')))
+        Web3.to_checksum_address('0xEe0e03C1a621084cA3c542F36E4A5D0230304471'), Web3.to_wei(2 ** 64 - 1, 'ether')))
 
 
-def interact_wallets_with_scroll(from_wallet, wallets_file):
-    # 先操作L1，由于L1到L2跨链需要时间，等待一段时间后再操作L2
-
-    result_f = open('scroll_failed_result.txt', 'w')
+def batch_transfer_to_wallets_from(from_wallet, wallets_file):
+    result_f = open('zksync_failed_result.txt', 'w')
     with open(wallets_file) as f:
         f_csv = csv.reader(f)
         next(f_csv)
         for each_wallet in f_csv:
             try:
-                GlobalConfig().use_proxy()
-                GlobalConfig().random_proxy()
-                interact_single_wallet_with_scroll_l1(from_wallet, each_wallet)
+                interact_single_wallet_with_zksync(from_wallet, each_wallet)
             except Exception as e:
-                print(f'interact scroll l2 error {repr(e)}')
+                print(f'interact zksync error {repr(e)}')
+                result_f.write(','.join(each_wallet))
+                result_f.write('\n')
+                result_f.flush()
+
+
+def interact_wallets_with_zksync(from_wallet, wallets_file):
+    result_f = open('zksync_failed_result.txt', 'w')
+    with open(wallets_file) as f:
+        f_csv = csv.reader(f)
+        next(f_csv)
+        for each_wallet in f_csv:
+            interact_single_wallet_with_zksync(from_wallet, each_wallet)
+            try:
+                pass
+                # GlobalConfig().use_proxy()
+                # GlobalConfig().random_proxy()
+            except Exception as e:
+                print(f'interact zksync error {repr(e)}')
                 result_f.write(','.join(each_wallet))
                 result_f.write('\n')
                 result_f.flush()
                 # result_f.write(f"Failed! Wallet {each_wallet[0]} interact scroll l1\n")
 
-    with open(wallets_file) as f:
-        f_csv = csv.reader(f)
-        next(f_csv)
-        for each_wallet in f_csv:
-            try:
-                GlobalConfig().use_proxy()
-                GlobalConfig().random_proxy()
-                interact_single_wallet_with_scroll_l2(each_wallet)
-                # add_liquidity_eth_usdc(each_wallet)
-            except Exception as e:
-                print(f'interact scroll l2 error {repr(e)}')
-                # result_f.write(f"Failed! Wallet {each_wallet[0]} interact scroll l2\n")
-                result_f.write(','.join(each_wallet))
-                result_f.write('\n')
-                result_f.flush()
+    # with open(wallets_file) as f:
+    #     f_csv = csv.reader(f)
+    #     next(f_csv)
+    #     for each_wallet in f_csv:
+    #         try:
+    #             GlobalConfig().use_proxy()
+    #             GlobalConfig().random_proxy()
+    #             interact_single_wallet_with_scroll_l2(each_wallet)
+    #             # add_liquidity_eth_usdc(each_wallet)
+    #         except Exception as e:
+    #             print(f'interact scroll l2 error {repr(e)}')
+    #             # result_f.write(f"Failed! Wallet {each_wallet[0]} interact scroll l2\n")
+    #             result_f.write(','.join(each_wallet))
+    #             result_f.write('\n')
+    #             result_f.flush()
     result_f.close()
 
 
 if __name__ == '__main__':
-    print('Begin scroll testnet interact...')
-    # 批量操作scroll
-    # 测试网领水地址 https://prealpha.scroll.io/faucet/
+    print('Begin zksync testnet interact...')
+    # 批量操作zksync testnet, https://portal.zksync.io/
 
     with open('xen_mints/base_transfer_wallet.csv') as f:
         reader = csv.reader(f)
         from_wallet = list(reader)[1]
 
-    interact_wallets_with_scroll(from_wallet, 'xen_mints/wallets_tomint.csv')
+    batch_transfer_to_wallets_from(from_wallet, 'xen_mints/wallets_tomint.csv')
+
+

@@ -23,178 +23,28 @@ l1_bridge_amount = get_random_amount(0.005)
 l2_bridge_amount = get_random_amount(0.004)
 
 
-def interact_single_wallet_with_scroll_l1(base_wallet, to_wallet):
+def interact_single_wallet(base_wallet, to_wallet):
     # Transfer Eth to wallets in csv file
-    # Scroll L2 转账
-    print('*************开始转账到L1的小钱包****************')
-    ToolHelper().contract('0x8318ed43dD6760dA6A01B7605C408841e7062419') \
+    print('*************开始转账到小钱包****************')
+    ToolHelper().contract('0x60371a3af7eA5A1cE594de2E419FF942134B1F70') \
         .abi('[]') \
-        .network(Network.scroll_test_l1) \
+        .network(Network.goerli) \
         .wait_for_complete(True) \
-        .transfer_eth_single(get_random_amount(0.0065), base_wallet, to_wallet)
-
-    # Bridge from L1 to L2
-    # L1 bridge contract[0x94Cf11667B017e9Fef7Ab557E2eF9EFf6fdfeDc3 ]
-    print('*************开始跨链，从L1到L2****************')
-    bridge_abi = '[{"inputs":[{"internalType":"uint256","name":"num","type":"uint256"}],"name":"depositETH","outputs":[],"stateMutability":"payable","type":"function"}]'
-    ToolHelper().contract('0x94Cf11667B017e9Fef7Ab557E2eF9EFf6fdfeDc3') \
-        .abi(bridge_abi) \
-        .network(Network.scroll_test_l1) \
-        .value(l1_bridge_amount) \
-        .gas_limit(130000) \
-        .gas_max_fee(1.5) \
-        .gas_priority_fee(1.5) \
-        .wallet(to_wallet) \
-        .wait_for_complete(True) \
-        .call_write('depositETH', (0))
+        .transfer_eth_single(get_random_amount(0.01), base_wallet, to_wallet)
 
 
-def interact_single_wallet_with_scroll_l2(to_wallet):
-    approve_usdc_in_l2(to_wallet)
-
-    bridge_l2_to_l1(to_wallet)
-
-    swap_from_eth_to_weth(to_wallet)
-
-    swap_from_eth_to_usdc(to_wallet)
-
-    add_liquidity_eth_usdc(to_wallet)
-
-
-def add_liquidity_eth_usdc(to_wallet):
-    # Step 2, make swap TSETH to TSUSDC
-    print('*************增加流动性 ETH/USDC****************')
-    liquidity_amount = 0.0005
-    amount_in = Web3.toWei(liquidity_amount, 'ether')
-    swap_path = [weth_contract_addr, usdc_contract_addr]
-    amount_path_out = ToolHelper().contract(swap_contract_addr) \
-        .abi(uniswap_router_abi) \
-        .network(Network.scroll_test_l2) \
-        .wallet(to_wallet) \
-        .call_read('getAmountsOut', (amount_in, swap_path))
-    amount_out = amount_path_out[1]
-    deadline = int(time.time() + 60)
-    ToolHelper().contract(swap_contract_addr) \
-        .abi(uniswap_router_abi) \
-        .value(liquidity_amount) \
-        .network(Network.scroll_test_l2) \
-        .gas_limit(200000) \
-        .gas_max_fee(1.5) \
-        .gas_priority_fee(1.5) \
-        .wallet(to_wallet) \
-        .call_write('addLiquidityETH', (
-        Web3.toChecksumAddress('0x80732890c93c6D9c6C23E06F888eD0CB88A06018'), amount_out, 0, 0, REPLACE_WALLET_ADDR,
-        deadline))
-
-
-def swap_from_eth_to_usdc(to_wallet):
-    # Make swap in L2
-    # Step1, get TSUSDC amount out
-    # uniswap contract [0xEe0e03C1a621084cA3c542F36E4A5D0230304471]
-    # TSUSDC contract [0x80732890c93c6D9c6C23E06F888eD0CB88A06018]
-    print('*************开始Swap，把ETH换成USDC****************')
-    swap_eu = l2_bridge_amount / 5
-    amount_in = Web3.toWei(swap_eu, 'ether')
-    swap_path = [weth_contract_addr, usdc_contract_addr]
-    amount_path_out = ToolHelper().contract(swap_contract_addr) \
-        .abi(uniswap_router_abi) \
-        .network(Network.scroll_test_l2) \
-        .wallet(to_wallet) \
-        .call_read('getAmountsOut', (amount_in, swap_path))
-    # Step 2, make swap TSETH to TSUSDC
-    amount_out = amount_path_out[1]
-    deadline = int(time.time() + 60)
-    ToolHelper().contract(swap_contract_addr) \
-        .abi(uniswap_router_abi) \
-        .value(swap_eu) \
-        .network(Network.scroll_test_l2) \
-        .gas_limit(200000) \
-        .gas_max_fee(1.5) \
-        .gas_priority_fee(1.5) \
-        .wallet(to_wallet) \
-        .wait_for_complete(True) \
-        .call_write('swapExactETHForTokens', (amount_out, swap_path, REPLACE_WALLET_ADDR, deadline))
-
-
-def swap_from_eth_to_weth(to_wallet):
-    # Wrap ether in L2
-    # WETH contract [0x05fDbDfaE180345C6Cff5316c286727CF1a43327]
-    print('*************开始Swap，把ETH换成WETH****************')
-    ToolHelper().contract(weth_contract_addr) \
-        .abi(weth_abi) \
-        .network(Network.scroll_test_l2) \
-        .value(l2_bridge_amount / 6) \
-        .gas_limit(50000) \
-        .gas_max_fee(1.5) \
-        .gas_priority_fee(1.5) \
-        .wallet(to_wallet) \
-        .wait_for_complete(True) \
-        .call_write('deposit', ())
-
-
-def bridge_l2_to_l1(to_wallet):
-    # Bridge from L2 to L1
-    # L2 bridge contract[0x8318ed43dD6760dA6A01B7605C408841e7062419]
-    print('*************开始跨链，从L2到L1****************')
-    bridge_abi = '[{"inputs":[{"internalType":"uint256","name":"num","type":"uint256"}],"name":"withdrawETH","outputs":[],"stateMutability":"payable","type":"function"}]'
-    ToolHelper().contract('0x8318ed43dD6760dA6A01B7605C408841e7062419') \
-        .abi(bridge_abi) \
-        .network(Network.scroll_test_l2) \
-        .value(l2_bridge_amount / 10) \
-        .gas_limit(200000) \
-        .gas_max_fee(1.5) \
-        .gas_priority_fee(1.5) \
-        .wallet(to_wallet) \
-        .wait_for_complete(True) \
-        .call_write('withdrawETH', (0))
-
-
-def approve_usdc_in_l2(to_wallet):
-    print('*************APPROVE USDC to SWAP****************')
-    ToolHelper().contract(usdc_contract_addr) \
-        .abi(
-        '[{"constant":false,"inputs":[{"name":"_spender","type":"address"},{"name":"_value","type":"uint256"}],"name":"approve","outputs":[{"name":"","type":"bool"}],"payable":false,"stateMutability":"nonpayable","type":"function"}]') \
-        .network(Network.scroll_test_l2) \
-        .gas_limit(200000) \
-        .gas_max_fee(1.5) \
-        .gas_priority_fee(1.5) \
-        .wallet(to_wallet) \
-        .wait_for_complete(True) \
-        .call_write('approve', (
-        Web3.toChecksumAddress('0xEe0e03C1a621084cA3c542F36E4A5D0230304471'), Web3.toWei(2 ** 64 - 1, 'ether')))
-
-
-def interact_wallets_with_scroll(from_wallet, wallets_file):
-    # 先操作L1，由于L1到L2跨链需要时间，等待一段时间后再操作L2
-
-    result_f = open('scroll_failed_result.txt', 'w')
+def batch_transfer_to_wallets_from(from_wallet, wallets_file, start_from = 0):
+    result_f = open('georli_failed_result.txt', 'w')
     with open(wallets_file) as f:
         f_csv = csv.reader(f)
         next(f_csv)
         for each_wallet in f_csv:
             try:
-                GlobalConfig().use_proxy()
-                GlobalConfig().random_proxy()
-                interact_single_wallet_with_scroll_l1(from_wallet, each_wallet)
+                if start_from > int(each_wallet[0]):
+                    continue
+                interact_single_wallet(from_wallet, each_wallet)
             except Exception as e:
-                print(f'interact scroll l2 error {repr(e)}')
-                result_f.write(','.join(each_wallet))
-                result_f.write('\n')
-                result_f.flush()
-                # result_f.write(f"Failed! Wallet {each_wallet[0]} interact scroll l1\n")
-
-    with open(wallets_file) as f:
-        f_csv = csv.reader(f)
-        next(f_csv)
-        for each_wallet in f_csv:
-            try:
-                GlobalConfig().use_proxy()
-                GlobalConfig().random_proxy()
-                interact_single_wallet_with_scroll_l2(each_wallet)
-                # add_liquidity_eth_usdc(each_wallet)
-            except Exception as e:
-                print(f'interact scroll l2 error {repr(e)}')
-                # result_f.write(f"Failed! Wallet {each_wallet[0]} interact scroll l2\n")
+                print(f'interact zksync error {repr(e)}')
                 result_f.write(','.join(each_wallet))
                 result_f.write('\n')
                 result_f.flush()
@@ -202,12 +52,12 @@ def interact_wallets_with_scroll(from_wallet, wallets_file):
 
 
 if __name__ == '__main__':
-    print('Begin scroll testnet interact...')
-    # 批量操作scroll
-    # 测试网领水地址 https://prealpha.scroll.io/faucet/
+    print('Begin georli interact...')
 
     with open('xen_mints/base_transfer_wallet.csv') as f:
         reader = csv.reader(f)
         from_wallet = list(reader)[1]
 
-    interact_wallets_with_scroll(from_wallet, 'xen_mints/wallets_tomint.csv')
+    batch_transfer_to_wallets_from(from_wallet, 'xen_mints/wallets_tomint.csv', 107)
+
+
